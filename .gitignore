@@ -1,0 +1,8 @@
+# Editor
+.idea
+
+# OS
+.DS_Store
+
+# sbt
+target
