@@ -1,23 +1,18 @@
-# This Dockerfile has two required ARGs to determine which base image
-# to use for the JDK and which sbt version to install.
-
-ARG OPENJDK_TAG=17.0.2-jdk-bullseye
-FROM openjdk:${OPENJDK_TAG}
+FROM amazoncorretto:17.0.4-al2
 
 ARG SBT_VERSION=1.7.1
 
 # prevent this error: java.lang.IllegalStateException: cannot run sbt from root directory without -Dsbt.rootdir=true; see sbt/sbt#1458
 WORKDIR /app
 
-# Install sbt
+COPY . /app
+
+# install sbt
 RUN \
-  mkdir /working/ && \
-  cd /working/ && \
-  curl -L -o sbt-$SBT_VERSION.deb https://repo.scala-sbt.org/scalasbt/debian/sbt-$SBT_VERSION.deb && \
-  dpkg -i sbt-$SBT_VERSION.deb && \
-  rm sbt-$SBT_VERSION.deb && \
-  apt-get update && \
-  apt-get install sbt=$SBT_VERSION && \
-  cd && \
-  rm -r /working/ && \
+  rm -f /etc/yum.repos.d/bintray-rpm.repo && \
+  curl -L https://www.scala-sbt.org/sbt-rpm.repo > sbt-rpm.repo && \
+  mv sbt-rpm.repo /etc/yum.repos.d/ && \
+  yum install -y sbt-$SBT_VERSION-0.noarch && \
   sbt sbtVersion
+
+CMD sbt compile && sbt run
