@@ -1,35 +1,21 @@
 package com.example
 
-import akka.actor.ActorSystem
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
-import akka.stream.ActorMaterializer
-
-import scala.concurrent.ExecutionContextExecutor
-import scala.io.StdIn
+import akka.http.scaladsl.server.Route
 
 object Example {
   def main(args: Array[String]): Unit = {
 
-    implicit val system: ActorSystem = ActorSystem("my-system")
-    implicit val materializer: ActorMaterializer = ActorMaterializer()
-    // needed for the future flatMap/onComplete in the end
-    implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+    implicit val system: ActorSystem[Nothing] = akka.actor.typed.ActorSystem(Behaviors.empty, "TheSystem")
 
-    val route =
-      path("hello") {
-        get {
-          complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>Say hello to akka-http</h1>"))
-        }
+    val route: Route =
+      get {
+        complete("Hello world")
       }
 
-    val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8080)
-
-    println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
-    StdIn.readLine() // let it run until user presses return
-    bindingFuture
-      .flatMap(_.unbind()) // trigger unbinding from the port
-      .onComplete(_ => system.terminate()) // and shutdown when done
+    Http().newServerAt("0.0.0.0", 8080).bind(route)
   }
 }
